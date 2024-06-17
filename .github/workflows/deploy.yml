@@ -38,7 +38,7 @@ jobs:
           port: ${{ secrets.EC2_PORT }} # Default is 22
           script: |
             cd /home/ubuntu/pearlthoughts
-            pm2 startOrRestart ecosystem.config.js --env production
+            pm2 startOrRestart ./dist/ecosystem.config.js --env production
 
       - name: Restart server
         uses: appleboy/ssh-action@master
