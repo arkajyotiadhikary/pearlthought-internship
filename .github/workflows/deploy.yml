@@ -1,32 +1,36 @@
-name: NestJS CI/CD
+name: Deploy to EC2
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    branches:
+      - main # Change this to your deployment branch if different
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - name: Use Node.js
-        uses: actions/setup-node@v1
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: '18' # Ensure this matches the version on your EC2
+
       - name: Install dependencies
         run: npm install
-      - name: Build
+
+      - name: Build the project
         run: npm run build
-      - name: Configure AWS credentials
-        uses: aws-actions/configure-aws-credentials@v1
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+
       - name: Deploy to EC2
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_KEY: ${{ secrets.EC2_KEY }}
         run: |
-          scp -r * ec2-user@your-ec2-ip:/home/ubuntu/pearlthoughts
-          ssh ec2-user@your-ec2-ip "cd /home/ubuntu/pearlthoughts && npm install && pm2 restart all"
+          echo "${{ secrets.EC2_KEY }}" > ec2-key.pem
+          chmod 400 ec2-key.pem
+          scp -i ec2-key.pem -r * ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/pearlthoughts
+          ssh -i ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "cd /home/ubuntu/pearlthoughts && npm install && npm run build && pm2 restart all"
