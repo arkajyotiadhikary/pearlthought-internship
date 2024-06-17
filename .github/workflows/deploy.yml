@@ -34,5 +34,6 @@ jobs:
           echo "${{ secrets.EC2_KEY }}" > ec2-key.pem
           chmod 400 ec2-key.pem
           echo "${{ secrets.SSH_KNOWN_HOSTS }}" > known_hosts
-          scp -i ec2-key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=known_hosts -r * ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/pearlthoughts
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+          scp -i ec2-key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=known_hosts -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/pearlthoughts
           ssh -i ec2-key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=known_hosts ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "cd /home/ubuntu/pearlthoughts && npm install && npm run build && pm2 restart all"
