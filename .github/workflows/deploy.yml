@@ -16,7 +16,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v2
         with:
-          node-version: '18'
+          node-version: '18' # Ensure this matches the version on your EC2
 
       - name: Install dependencies
         run: npm install
@@ -29,11 +29,9 @@ jobs:
           EC2_HOST: ${{ secrets.EC2_HOST }}
           EC2_USER: ${{ secrets.EC2_USER }}
           EC2_KEY: ${{ secrets.EC2_KEY }}
-          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         run: |
           echo "${{ secrets.EC2_KEY }}" > ec2-key.pem
           chmod 400 ec2-key.pem
-          echo "${{ secrets.SSH_KNOWN_HOSTS }}" > known_hosts
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
-          scp -i ec2-key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=known_hosts -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/pearlthoughts
-          ssh -i ec2-key.pem -o StrictHostKeyChecking=no -o UserKnownHostsFile=known_hosts ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "cd /home/ubuntu/pearlthoughts && npm install && npm run build && pm2 restart all"
+          scp -i ec2-key.pem -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/pearlthoughts
+          ssh -i ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo chown -R ${{ secrets.EC2_USER }} /home/ubuntu/pearlthoughts && cd /home/ubuntu/pearlthoughts && npm install && npm run build && pm2 restart all"
