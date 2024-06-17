@@ -30,8 +30,24 @@ jobs:
           EC2_USER: ${{ secrets.EC2_USER }}
           EC2_KEY: ${{ secrets.EC2_KEY }}
         run: |
+          # Save the SSH private key
           echo "${{ secrets.EC2_KEY }}" > ec2-key.pem
           chmod 400 ec2-key.pem
+
+          # Create the .ssh directory if it doesn't exist
+          mkdir -p ~/.ssh
+
+          # Add the EC2 host to known hosts
           ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts
+
+          # Copy files to EC2 instance
           scp -i ec2-key.pem -r . ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:/home/ubuntu/pearlthoughts
-          ssh -i ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "sudo chown -R ${{ secrets.EC2_USER }} /home/ubuntu/pearlthoughts && cd /home/ubuntu/pearlthoughts && npm install && npm run build && pm2 restart all"
+
+          # Execute commands on the EC2 instance
+          ssh -i ec2-key.pem ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "
+            sudo chown -R ${{ secrets.EC2_USER }} /home/ubuntu/pearlthoughts &&
+            cd /home/ubuntu/pearlthoughts &&
+            npm install &&
+            npm run build &&
+            pm2 restart all
+          "
