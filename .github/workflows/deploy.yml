@@ -29,7 +29,7 @@ jobs:
           source: 'dist/' # or the directory of your built project
           target: '/home/ubuntu/pearlthoughts'
 
-      - name: Restart server (optional)
+      - name: Start server with PM2
         uses: appleboy/ssh-action@master
         with:
           host: ${{ secrets.EC2_HOST }}
@@ -38,4 +38,15 @@ jobs:
           port: ${{ secrets.EC2_PORT }} # Default is 22
           script: |
             cd /home/ubuntu/pearlthoughts
-            pm2 restart all # or your specific start command
+            pm2 startOrRestart ecosystem.config.js --env production
+
+      - name: Restart server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_KEY }}
+          port: ${{ secrets.EC2_PORT }} # Default is 22
+          script: |
+            cd /home/ubuntu/pearlthoughts
+            pm2 restart all
