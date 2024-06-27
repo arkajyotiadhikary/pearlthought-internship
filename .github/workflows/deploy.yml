@@ -13,26 +13,29 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v2
 
+    - name: Set up Node.js
+      uses: actions/setup-node@v2
+      with:
+        node-version: '14'  # or any other version that your project requires
+
+    - name: Install dependencies
+      run: npm install
+
+    - name: Build the application
+      run: npm run build
+
     - name: Set up SSH
       uses: webfactory/ssh-agent@v0.5.3
       with:
         ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-    - name: Archive files
-      run: |
-        tar -czf project.tar.gz *
-
-    - name: Copy tarball via scp
-      run: |
-        scp -o StrictHostKeyChecking=no project.tar.gz ubuntu@ec2-13-126-198-226.ap-south-1.compute.amazonaws.com:/srv/nestjs-deploy
-
     - name: SSH and deploy
       run: |
         ssh -o StrictHostKeyChecking=no ubuntu@ec2-13-126-198-226.ap-south-1.compute.amazonaws.com << 'EOF'
           cd /srv/nestjs-deploy
-          tar -xzf project.tar.gz
-          rm project.tar.gz
+          git pull origin main
           npm install
+          npm run build
           pm2 restart nestjs-app || pm2 start npm --name "nestjs-app" -- run start
           pm2 save
         EOF
